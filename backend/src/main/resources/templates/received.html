@@ -19,6 +19,7 @@
             margin-bottom: 1rem;
         }
         h1 { margin-top: 0; font-size: 1.5rem; }
+        /* 署名検証結果のバッジ */
         .badge {
             display: inline-block;
             padding: 0.3rem 0.8rem;
@@ -26,8 +27,8 @@
             font-weight: bold;
             font-size: 0.9rem;
         }
-        .badge-ok  { background: #c6f6d5; color: #276749; }
-        .badge-ng  { background: #fed7d7; color: #9b2c2c; }
+        .badge-ok  { background: #c6f6d5; color: #276749; } /* 検証成功: 緑 */
+        .badge-ng  { background: #fed7d7; color: #9b2c2c; } /* 検証失敗: 赤 */
         table { width: 100%; border-collapse: collapse; }
         th, td {
             text-align: left;
@@ -35,6 +36,7 @@
             border-bottom: 1px solid #e2e8f0;
         }
         th { background: #edf2f7; width: 35%; }
+        /* 署名は長い16進数文字列なので折り返し表示 */
         .signature {
             font-family: monospace;
             font-size: 0.75rem;
@@ -52,23 +54,33 @@
 </head>
 <body>
 
+<!-- ===== 受信結果ヘッダー ===== -->
 <div class="card">
     <h1>外部サービス: 受信結果</h1>
     <p>autopostで送られてきたデータを受信しました。</p>
 
-    <!-- 署名検証結果 -->
+    <!--
+        署名検証の結果を表示する。
+        th:if="${isValid}"   : isValid が true のときだけ表示する
+        th:unless="${isValid}": isValid が false のときだけ表示する（th:if の逆）
+    -->
     <p>
         署名検証:
-        <span th:if="${isValid}"  class="badge badge-ok">OK - 改ざんなし</span>
+        <span th:if="${isValid}"     class="badge badge-ok">OK - 改ざんなし</span>
         <span th:unless="${isValid}" class="badge badge-ng">NG - 署名が一致しません</span>
     </p>
 </div>
 
+<!-- ===== 受信データ一覧 ===== -->
 <div class="card">
     <h2 style="margin-top:0; font-size:1.1rem;">受信したデータ</h2>
     <table>
         <tr>
             <th>注文ID</th>
+            <!--
+                th:text="${orderId}": タグの中身を orderId の値で置き換える。
+                XSS対策として HTML エスケープが自動で行われる（< → &lt; など）。
+            -->
             <td th:text="${orderId}"></td>
         </tr>
         <tr>
@@ -81,26 +93,32 @@
         </tr>
         <tr>
             <th>金額</th>
+            <!-- 文字列の連結: ${amount} + ' 円' → "9800 円" と表示される -->
             <td th:text="${amount} + ' 円'"></td>
         </tr>
         <tr>
             <th>タイムスタンプ</th>
+            <!-- Unix時間（1970年1月1日からの経過秒数）が表示される -->
             <td th:text="${timestamp}"></td>
         </tr>
         <tr>
             <th>署名 (SHA-256)</th>
+            <!-- 64文字の16進数。monospaceフォントで表示 -->
             <td class="signature" th:text="${signature}"></td>
         </tr>
     </table>
 </div>
 
+<!-- ===== 学習メモ ===== -->
 <div class="card" style="background:#fffbeb; border-left: 4px solid #f6ad55;">
     <h3 style="margin-top:0; font-size:1rem;">学習メモ: なぜ署名が必要か？</h3>
     <p style="margin:0; font-size:0.9rem; line-height:1.6;">
-        autopostはブラウザを経由してデータを送るため、
-        ユーザーがDevToolsなどでhiddenフィールドを書き換える可能性がある。<br>
+        autopost はブラウザを経由してデータを送るため、
+        ユーザーが DevTools などで hidden フィールドの値を書き換えられる可能性がある。<br>
+        例: amount を "9800" から "1" に書き換えて安く購入しようとする攻撃。<br><br>
         <strong>署名</strong>を付けることで、受信側がデータの改ざんを検知できる。<br>
-        実運用では <code>HMAC-SHA256</code> と秘密鍵を使う。
+        署名は秘密鍵がないと再生成できないため、攻撃者は有効な署名を作れない。<br>
+        実運用では <code>HMAC-SHA256</code> と秘密鍵を使うこと。
     </p>
 </div>
 

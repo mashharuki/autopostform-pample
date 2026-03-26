@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.RequestParam;
  * このサンプルでは学習用に同じサーバー内に実装している。
  *
  * 主な責務:
- * - autopostされたフォームデータの受け取り
- * - 署名の検証（改ざんされていないか確認）
- * - 処理結果の表示
+ *   1. autopost されたフォームデータを受け取る
+ *   2. 署名を検証し、データが改ざんされていないか確認する
+ *   3. 処理結果をテンプレートで表示する
  */
 @Controller
 @RequestMapping("/api")
@@ -29,38 +29,46 @@ public class ReceiverController {
     }
 
     /**
-     * autopostされたデータを受け取り、署名検証の上で結果を表示する。
+     * autopost されたデータを受け取り、署名検証の上で結果を表示する。
      *
-     * @param orderId   注文ID
-     * @param name      注文者名
-     * @param itemName  商品名
-     * @param amount    金額
-     * @param timestamp タイムスタンプ
-     * @param signature 署名（改ざん検知用）
-     * @param model     Thymeleafテンプレートへ渡すデータ
-     * @return received.html（受信結果ページ）
+     * @RequestParam("order_id") String orderId:
+     *   autopost.html の <input type="hidden" name="order_id"> の値を受け取る。
+     *   パラメータ名は HTML の name 属性と一致させる必要がある（スネークケースに注意）。
+     *
+     * 各パラメータの対応:
+     *   order_id  → <input name="order_id">  → 注文ID
+     *   name      → <input name="name">      → 注文者名
+     *   item_name → <input name="item_name"> → 商品名
+     *   amount    → <input name="amount">    → 金額（int型に自動変換される）
+     *   timestamp → <input name="timestamp"> → タイムスタンプ（long型に自動変換される）
+     *   signature → <input name="signature"> → 改ざん検知用署名
+     *
+     * @return "received" → templates/received.html をレンダリングして返す
      */
     @PostMapping("/receive")
     public String receive(
             @RequestParam("order_id")  String orderId,
             @RequestParam("name")      String name,
             @RequestParam("item_name") String itemName,
-            @RequestParam("amount")    int amount,
-            @RequestParam("timestamp") long timestamp,
+            @RequestParam("amount")    int amount,       // Stringから自動でintに変換される
+            @RequestParam("timestamp") long timestamp,   // Stringから自動でlongに変換される
             @RequestParam("signature") String signature,
             Model model) {
 
-        // 署名検証: 送信時と同じ計算で一致するか確認
+        // 署名検証: 受け取ったデータから同じ計算で署名を再生成し、送られてきた署名と比較する
+        // 一致すれば「バックエンドが正規に生成したデータ」と判断できる
         boolean isValid = autoPostFormService.verifySignature(orderId, amount, timestamp, signature);
 
+        // 受信したデータをすべてテンプレートへ渡す（画面に表示するため）
         model.addAttribute("orderId",   orderId);
         model.addAttribute("name",      name);
         model.addAttribute("itemName",  itemName);
         model.addAttribute("amount",    amount);
         model.addAttribute("timestamp", timestamp);
         model.addAttribute("signature", signature);
-        model.addAttribute("isValid",   isValid);
+        model.addAttribute("isValid",   isValid); // 署名検証の結果（true/false）
 
-        return "received"; // templates/received.html を返す
+        // templates/received.html を返す
+        return "received";
     }
 }
