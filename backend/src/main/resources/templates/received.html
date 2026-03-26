@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>受信結果</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 700px;
+            margin: 2rem auto;
+            padding: 1rem;
+            background-color: #f0f4f8;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 1rem;
+        }
+        h1 { margin-top: 0; font-size: 1.5rem; }
+        .badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 9999px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .badge-ok  { background: #c6f6d5; color: #276749; }
+        .badge-ng  { background: #fed7d7; color: #9b2c2c; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td {
+            text-align: left;
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th { background: #edf2f7; width: 35%; }
+        .signature {
+            font-family: monospace;
+            font-size: 0.75rem;
+            word-break: break-all;
+            color: #718096;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 1rem;
+            color: #4299e1;
+            text-decoration: none;
+        }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>外部サービス: 受信結果</h1>
+    <p>autopostで送られてきたデータを受信しました。</p>
+
+    <!-- 署名検証結果 -->
+    <p>
+        署名検証:
+        <span th:if="${isValid}"  class="badge badge-ok">OK - 改ざんなし</span>
+        <span th:unless="${isValid}" class="badge badge-ng">NG - 署名が一致しません</span>
+    </p>
+</div>
+
+<div class="card">
+    <h2 style="margin-top:0; font-size:1.1rem;">受信したデータ</h2>
+    <table>
+        <tr>
+            <th>注文ID</th>
+            <td th:text="${orderId}"></td>
+        </tr>
+        <tr>
+            <th>注文者名</th>
+            <td th:text="${name}"></td>
+        </tr>
+        <tr>
+            <th>商品名</th>
+            <td th:text="${itemName}"></td>
+        </tr>
+        <tr>
+            <th>金額</th>
+            <td th:text="${amount} + ' 円'"></td>
+        </tr>
+        <tr>
+            <th>タイムスタンプ</th>
+            <td th:text="${timestamp}"></td>
+        </tr>
+        <tr>
+            <th>署名 (SHA-256)</th>
+            <td class="signature" th:text="${signature}"></td>
+        </tr>
+    </table>
+</div>
+
+<div class="card" style="background:#fffbeb; border-left: 4px solid #f6ad55;">
+    <h3 style="margin-top:0; font-size:1rem;">学習メモ: なぜ署名が必要か？</h3>
+    <p style="margin:0; font-size:0.9rem; line-height:1.6;">
+        autopostはブラウザを経由してデータを送るため、
+        ユーザーがDevToolsなどでhiddenフィールドを書き換える可能性がある。<br>
+        <strong>署名</strong>を付けることで、受信側がデータの改ざんを検知できる。<br>
+        実運用では <code>HMAC-SHA256</code> と秘密鍵を使う。
+    </p>
+</div>
+
+<a class="back-link" href="/">← 最初に戻る</a>
+
+</body>
+</html>

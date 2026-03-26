@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autopostform 学習アプリ</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: sans-serif;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 1rem;
+            background-color: #f0f4f8;
+        }
+        h1 { font-size: 1.6rem; color: #2d3748; }
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 0.3rem;
+            color: #4a5568;
+            font-size: 0.9rem;
+        }
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        input:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66,153,225,0.2);
+        }
+        button[type="submit"] {
+            width: 100%;
+            padding: 0.8rem;
+            background-color: #4299e1;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button[type="submit"]:hover { background-color: #3182ce; }
+
+        .flow-diagram {
+            background: #edf2f7;
+            border-radius: 6px;
+            padding: 1rem 1.5rem;
+            font-size: 0.88rem;
+            line-height: 2;
+            color: #4a5568;
+        }
+        .flow-diagram code {
+            background: #e2e8f0;
+            padding: 0.1rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Autopostform 学習アプリ</h1>
+
+<div class="card">
+    <h2 style="margin-top:0; font-size:1.1rem;">フローの仕組み</h2>
+    <div class="flow-diagram">
+        1. このページでフォームを送信<br>
+        2. バックエンド <code>POST /api/initiate</code> が受け取る<br>
+        3. バックエンドが署名を生成 &amp; <code>autopost.html</code> を返す<br>
+        4. ブラウザが即座にフォームを自動submit<br>
+        5. 外部サービス <code>POST /api/receive</code> がデータを受け取る<br>
+        6. 署名検証 → 結果表示
+    </div>
+</div>
+
+<div class="card">
+    <h2 style="margin-top:0; font-size:1.1rem;">注文情報を入力</h2>
+
+    <!--
+        action="/api/initiate" にPOSTする。
+        バックエンドがautopost.htmlを返し、そこから外部サービスへ自動転送される。
+    -->
+    <form action="http://localhost:8080/api/initiate" method="POST">
+
+        <label for="name">注文者名</label>
+        <input type="text" id="name" name="name"
+               value="山田 太郎" required>
+
+        <label for="itemName">商品名</label>
+        <input type="text" id="itemName" name="itemName"
+               value="プレミアムプラン" required>
+
+        <label for="amount">金額（円）</label>
+        <input type="number" id="amount" name="amount"
+               value="9800" min="1" required>
+
+        <button type="submit">注文して外部サービスへ送信</button>
+    </form>
+</div>
+
+</body>
+</html>
