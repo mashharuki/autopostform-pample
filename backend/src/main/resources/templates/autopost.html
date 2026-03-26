@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<!--
+    Thymeleaf テンプレートとして使うために xmlns:th を宣言する。
+    th:xxx 属性を使うと Thymeleaf がサーバー側で値を埋め込んでくれる。
+-->
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>処理中...</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f4f8;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        /* ローディングスピナーのアニメーション */
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e2e8f0;
+            border-top-color: #4299e1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 1rem auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 自動送信中であることをユーザーに伝えるローディング表示 -->
+    <div class="spinner"></div>
+    <p>外部サービスへ接続中です。そのままお待ちください...</p>
+
+    <!--
+        ============================================================
+        【Autopostフォームの核心部分】
+
+        このフォームはユーザーには「見えない」。
+        ページが読み込まれた直後に JavaScript が自動で submit するため、
+        ユーザーには一瞬のローディング画面が見えるだけで
+        気づかないうちにデータが外部サービスへ送信される。
+
+        なぜ autopost を使うのか？
+          ① POSTでデータを送れる → URLにデータが露出しない（GETと違い）
+          ② クロスオリジン（別ドメイン）へのリダイレクトが可能
+          ③ 複数の hidden フィールドでまとめてデータを送信できる
+          ④ 署名など機密性の高いデータをURLに含めずに済む
+
+        典型的なユースケース:
+          - クレジットカード決済の 3D セキュア認証リダイレクト
+          - SAML 認証の IdP へのリダイレクト
+        ============================================================
+    -->
+    <form id="autoPostForm"
+          th:action="${formData.actionUrl}"
+          method="POST">
+        <!--
+            th:action="${formData.actionUrl}":
+                Thymeleaf が ${formData.actionUrl} の値を action 属性に展開する。
+                例: <form action="http://localhost:8080/api/receive" method="POST">
+        -->
+
+        <!--
+            th:each="field : ${formData.hiddenFields}":
+                Map の全エントリーをループして <input type="hidden"> を繰り返し生成する。
+                field.key   → HTML の name 属性  (例: "order_id")
+                field.value → HTML の value 属性 (例: "ORD-1234567890")
+
+            展開後のHTMLイメージ:
+                <input type="hidden" name="order_id"  value="ORD-1234567890" />
+                <input type="hidden" name="name"      value="山田 太郎" />
+                <input type="hidden" name="item_name" value="プレミアムプラン" />
+                <input type="hidden" name="amount"    value="9800" />
+                <input type="hidden" name="timestamp" value="1711234567" />
+                <input type="hidden" name="signature" value="a1b2c3..." />
+        -->
+        <input type="hidden"
+               th:each="field : ${formData.hiddenFields}"
+               th:name="${field.key}"
+               th:value="${field.value}" />
+
+        <!-- JavaScript が無効な環境向けのフォールバックボタン（通常は表示されない） -->
+        <noscript>
+            <button type="submit">続行する</button>
+        </noscript>
+    </form>
+</div>
+
+<script>
+    /*
+     * ページの読み込みが完了した瞬間にフォームを submit する。
+     * これが autopost の核心。ユーザーは何もクリックしない。
+     *
+     * 'load' イベント: HTML・CSS・画像など全リソースの読み込み完了後に発火する。
+     * DOMContentLoaded でも動作するが、確実性のため 'load' を使用。
+     */
+    window.addEventListener('load', function () {
+        document.getElementById('autoPostForm').submit();
+    });
+</script>
+
+</body>
+</html>
